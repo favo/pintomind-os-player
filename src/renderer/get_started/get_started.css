@@ -1,0 +1,117 @@
+main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    min-width: 100vw; 
+    min-height: 100vh;  
+}
+
+.container {
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+    padding: 1rem;
+}
+
+.container.right {
+    align-items: center;
+    justify-content: center;
+    padding-left: 6vmax;
+}
+.container.left {
+    justify-content: space-around;
+    padding: 3rem 0 3rem 8vmax;
+}
+
+h2 {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+h2 img {
+    height: 1.3em;
+    width: 1.3em;
+    color: white;
+}
+ul {
+    list-style: decimal;
+    margin: 0.5rem 0;
+}
+
+.logo {
+    height: 3.5rem;
+    width: fit-content;
+}
+
+.qr-code-container {
+    display: flex;
+    justify-content: center;
+    margin: 4rem 0;
+}
+.qr-code-container img {
+    height: 10rem;
+}
+
+.device-id {
+    color: #5A5A5A;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.bluetooth-id {
+    text-transform: uppercase;
+}
+
+.random-id {
+    font-size: 2.5rem;
+    font-weight: bold;
+    line-height: 1em;
+    color: white;
+    text-transform: uppercase;
+    font-family: Verdana, Geneva, Tahoma, sans-serif;
+}
+
+#top-right {
+    position: absolute;
+    top: 2vw;
+    right: 2vw;
+    height: 21%; 
+    pointer-events: none;
+}
+
+
+@media (orientation: landscape) {
+  }
+  
+  @media (orientation: portrait) {
+
+    main {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+    }
+    .qr-code-container {
+        margin: 0 2rem 0 0;
+    }
+
+    .qr-code-container img {
+        height: 20vw;
+    }
+
+    .logo {
+        margin-top: 6vmax;
+        margin-bottom: 1rem;
+    }
+
+    .container.left, .container.right {
+        padding: 5vmax 5vmax 5vmax 7vmax;
+    }
+
+    .container.right {
+        justify-content: left;
+        flex-direction: row;
+    }
+
+    #top-right {
+        height: 10%;
+    }
+}

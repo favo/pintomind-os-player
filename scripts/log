@@ -1,0 +1,6 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+source "$SCRIPT_DIR/ip.sh"
+
+"$SCRIPT_DIR/ssh" "journalctl --user -f -u pintomind-player"
