@@ -3,8 +3,8 @@ const quote = require("shell-quote/quote");
 const { executeCommand } = require("./utils.js");
 const { ipcMain } = require("electron");
 const { store } = require("./store");
+const { monitor } = require("./nmcliConnectionMonitor");
 
-let lastConnectionSSID;
 let ethernetInterval;
 
 const networkManager = (module.exports = {
@@ -96,71 +96,46 @@ const networkManager = (module.exports = {
         const password = data.password;
         const security = data.security || "";
         const options = data.options || {};
-        let result;
 
-        ipcMain.emit("is_connecting");
+        const cleanup = async () => {
+            monitor.off("connectionActivated", handleConnectionActivated);
+            monitor.off("connectionFailed", handleConnectionFailed);
+            monitor.killJournel();
+        };
 
-        // Disconnect from previous network if any
-        if (lastConnectionSSID != null) {
-            await networkManager.deleteConnectionBySSID(lastConnectionSSID);
+        const handleConnectionActivated = async () => {
+            console.log("Connection fully activated.")
+            const serverConnectionResult = await networkManager.attemptServerConnection();
+            ipcMain.emit("connecting_result", null, serverConnectionResult);
+            cleanup();
         }
 
-        lastConnectionSSID = ssid;
+        const handleConnectionFailed = async () => {
+            console.log("Connection failed")
+            ipcMain.emit("connecting_result", null, { success: false });
+            cleanup();
+        }
+
+        monitor.on("connectionActivated", handleConnectionActivated);
+        monitor.on("connectionFailed", handleConnectionFailed);
+        monitor.listenToJournal()
+        
+        ipcMain.emit("is_connecting");
+
+        await networkManager.resetAllConnections()
 
         if (options.hidden) {
             // Connect to hidden network if specified
-            result = await networkManager.connectToHiddenNetwork(ssid, password);
+            await networkManager.connectToHiddenNetwork(ssid, password);
         } else if (security.includes("WPA") && password) {
             // Connect to WPA secured network if password is provided
-            result = await networkManager.connectToWPANetwork(ssid, password);
+            await networkManager.connectToWPANetwork(ssid, password);
         } else {
             // Connect to unsecured network
-            result = await networkManager.connectToUnsecureNetwork(ssid);
-        }
-
-        ipcMain.emit("connecting_result", null, result);
-        return result;
-    },
-
-    /**
-     * Function for resolving a connection attempt
-     * @param {JSONObject} connection
-     * @param {String} ssid
-     * @returns {JSONObject}
-     */
-    async resolveNetworkConnection(connection, ssid) {
-        if (connection.success) {
-            /* Connection succesful added */
-
-            /* Checks and wait if connection is active */
-            const activeConnection = await networkManager.waitForActiveConnection(ssid);
-
-            if (activeConnection.success) {
-                /* Connection is active */
-
-                /* Attemps to connect to server */
-                const serverConnectionResult = await networkManager.attemptServerConnection();
-
-                if (serverConnectionResult.success && serverConnectionResult.stdout.toString() === "1") {
-                    /* Successfully pings server */
-                    return serverConnectionResult;
-                } else {
-                    /* cant connect to server, may be wrong password */
-                    networkManager.deleteConnectionBySSID(ssid);
-
-                    return serverConnectionResult;
-                }
-            } else {
-                /* Connection is not active, deletes connection */
-                networkManager.deleteConnectionBySSID(ssid);
-
-                return activeConnection;
-            }
-        } else {
-            /* Connection unsuccesful added */
-            return connection;
+            await networkManager.connectToUnsecureNetwork(ssid);
         }
     },
+
 
     /**
      * Function for connection to a unsecure network
@@ -170,9 +145,7 @@ const networkManager = (module.exports = {
     async connectToUnsecureNetwork(ssid) {
         const connectCommand = quote(["nmcli", "device", "wifi", "connect", ssid]);
 
-        const connection = await executeCommand(connectCommand, "Unsecure network connection");
-
-        return await networkManager.resolveNetworkConnection(connection, ssid);
+        return await executeCommand(connectCommand, "Unsecure network connection");
     },
 
     /**
@@ -184,13 +157,11 @@ const networkManager = (module.exports = {
     async connectToWPANetwork(ssid, password) {
         const connectCommand = quote(["nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
 
-        const connection = await executeCommand(connectCommand, "WPA network connection");
-
-        return await networkManager.resolveNetworkConnection(connection, ssid);
+        await executeCommand(connectCommand, "WPA network connection");
     },
 
     /**
-     * Function for connection to a hidden network. NOT WORKING
+     * Function for connection to a hidden network
      * @param {String} ssid
      * @param {String} password
      * @returns {Boolean}
@@ -198,77 +169,11 @@ const networkManager = (module.exports = {
     async connectToHiddenNetwork(ssid, password) {
         const addConnectionCommand = quote(["nmcli", "conn", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
 
-        const connectionResult = await executeCommand(addConnectionCommand, "Network connection");
+        await executeCommand(addConnectionCommand, "Network connection");
 
         if (connectionResult.success && connectionResult.stdout.includes("successfully added")) {
-            const connectCommand = quote(["nmcli", "conn", "up", ssid]);
-
-            const connectResult = await executeCommand(connectCommand);
-
-            if (connectResult.success && connectResult.stdout.includes("Connection successfully activated")) {
-                /* Attemps to connect to server */
-                const serverConnectionResult = await networkManager.attemptServerConnection();
-
-                if (serverConnectionResult.success && serverConnectionResult.stdout.toString() === "1") {
-                    /* Successfully pings server */
-                    return serverConnectionResult;
-                } else {
-                    /* cant connect to server, may be wrong password */
-                    networkManager.deleteConnectionBySSID(ssid);
-
-                    return serverConnectionResult;
-                }
-            } else {
-                /* Connection not successfully activated, possible wrong password */
-
-                networkManager.deleteConnectionBySSID(ssid);
-                return connectResult;
-            }
-        } else {
-            return connectionResult;
+            await executeCommand(`nmcli conn up "${ssid}"`);
         }
-    },
-
-    /**
-     *   Checks and waits for connection to be activated
-     *   @param {String} ssid
-     *   @returns {Boolean}
-     */
-    async waitForActiveConnection(ssid) {
-        const connectionStateCommand = quote(["nmcli", "-f", "GENERAL.STATE", "connection", "show", ssid]);
-
-        let attempts = 0;
-        let connectionState;
-        let lastConnectionState = null;
-        while (attempts < 75) {
-            connectionState = await executeCommand(connectionStateCommand);
-
-            if (connectionState.success && connectionState.stdout.includes("activated")) {
-                return connectionState;
-            } else if (connectionState.success && connectionState.stdout.includes("activating")) {
-                lastConnectionState = "activating";
-                attempts++;
-                await new Promise((resolve) => setTimeout(resolve, 500));
-            } else if (connectionState.success && connectionState.stdout.includes("deactivated")) {
-                connectionState.success = false;
-                connectionState.stdout = "Connection state deactivating";
-                return false;
-            } else {
-                if (lastConnectionState === "activating") {
-                    connectionState.success = false;
-                    connectionState.stderr = "Operation went from activating to null. Most likely wrong password";
-                    connectionState.type = "802-11-wireless-security.psk";
-                    return connectionState;
-                } else {
-                    attempts++;
-                    await new Promise((resolve) => setTimeout(resolve, 500));
-                }
-            }
-        }
-
-        connectionState.success = false;
-        connectionState.stderr = "Exceeded maximum attempts. Operation failed.";
-        return connectionState;
     },
 
     /**
@@ -308,10 +213,7 @@ const networkManager = (module.exports = {
      *  @param {String} ssid
      */
     async deleteConnectionBySSID(ssid) {
-        const deleteCommand = quote(["nmcli", "connection", "delete", ssid]);
-        const deleteResult = await executeCommand(deleteCommand, "delete ssid");
-        lastConnectionSSID = null;
-        return deleteResult.success;
+        return await executeCommand(`nmcli connection delete "${ssid}"`, "delete ssid").success;
     },
 
     /**

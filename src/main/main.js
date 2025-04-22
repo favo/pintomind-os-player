@@ -188,15 +188,24 @@ ipcMain.on("factory_reset", (event, arg) => {
     factoryReset();
 });
 
-ipcMain.on("check_server_connection", async (event, arg) => {
-    const status = await NetworkManager.checkConnectionToServer();
-    getWebContents().send("connect_to_network_status", status);
-});
 
-ipcMain.on("connect_to_network", async (_event, arg) => {
-    const result = await NetworkManager.connectToNetwork(arg);
+ipcMain.on("check_server_connection", async () => {
+    const result = await NetworkManager.checkConnectionToServer();
     getWebContents().send("connect_to_network_status", result);
 });
+
+ipcMain.on("connect_to_network", (_event, arg) => {
+    NetworkManager.connectToNetwork(arg);
+});
+
+ipcMain.on("connecting_result", (_event, arg) => {
+    getWebContents().send("connect_to_network_status", arg);
+});
+
+ipcMain.on("ethernet_status", (_event, result) => {
+    getWebContents().send("connect_to_network_status", result);
+});
+
 
 ipcMain.on("search_after_networks", async (event, arg) => {
     const result = await NetworkManager.scanAvailableNetworks();
@@ -225,10 +234,6 @@ ipcMain.on("request_system_stats", (event, arg) => {
 
 ipcMain.on("is_connecting", async (_event, arg) => {
     getWebContents().send("is_connecting");
-});
-
-ipcMain.on("connecting_result", async (_event, arg) => {
-    getWebContents().send("connect_to_network_status", arg);
 });
 
 
@@ -282,10 +287,6 @@ ipcMain.on("connect_to_dns", async (event, dns) => {
         store.set("dns", dns)
     }
     getWebContents().send("dns_registred", result.success);
-});
-
-ipcMain.on("ethernet_status", (_event, result) => {
-    getWebContents().send("connect_to_network_status", result);
 });
 
 ipcMain.on("remove_mouse", (_event, _arg) => {
