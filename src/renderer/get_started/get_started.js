@@ -24,12 +24,10 @@ window.onload = async () => {
         setConnecting();
         window.api.send("check_server_connection");
 
-        window.api.receive("get_bluetooth_id", (bluetooth_id) => {
+        sendRecieveToMain("get_bluetooth_id", null, (bluetooth_id) => {
             const formattedString = bluetooth_id.slice(0, 9).match(/.{1,3}/g).join('-');
             Array.from(document.querySelectorAll(".bluetooth-id")).forEach(el => el.innerHTML = formattedString)
-        });
-
-        window.api.send("get_bluetooth_id");
+        })
     });
 
     getFromStore("host", null, (host) => {

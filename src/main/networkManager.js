@@ -3,7 +3,7 @@ const quote = require("shell-quote/quote");
 const { executeCommand } = require("./utils.js");
 const { ipcMain } = require("electron");
 const { store } = require("./store");
-const { monitor } = require("./nmcliConnectionMonitor");
+const { dbusMonitor } = require("./dbusMonitor");
 
 let ethernetInterval;
 
@@ -97,28 +97,31 @@ const networkManager = (module.exports = {
         const security = data.security || "";
         const options = data.options || {};
 
+        console.log("Connection to:", ssid, ", with security:", security);
+
+        let lastStatusCode; 
+
         const cleanup = async () => {
-            monitor.off("connectionActivated", handleConnectionActivated);
-            monitor.off("connectionFailed", handleConnectionFailed);
-            monitor.killJournel();
+            dbusMonitor.off("stateChanged", handleDbusMonitorStateChange);
+            dbusMonitor.kill();
         };
 
-        const handleConnectionActivated = async () => {
-            console.log("Connection fully activated.")
-            const serverConnectionResult = await networkManager.attemptServerConnection();
-            ipcMain.emit("connecting_result", null, serverConnectionResult);
-            cleanup();
+        const handleDbusMonitorStateChange = async (statusCode) => {
+            console.log("DbusMonitor stateChanged:", statusCode, ", last code", lastStatusCode);
+            if (lastStatusCode == dbusMonitor.NM_STATE_CONNECTING && statusCode == dbusMonitor.NM_STATE_DISCONNECTED) {
+                ipcMain.emit("connecting_result", null, { success: false });
+                cleanup()
+            } else if (statusCode == dbusMonitor.NM_STATE_CONNECTED_GLOBAL) {
+                const serverConnectionResult = await networkManager.attemptServerConnection();
+                ipcMain.emit("connecting_result", null, serverConnectionResult);
+                cleanup()
+            }
+            
+            lastStatusCode = statusCode
         }
 
-        const handleConnectionFailed = async () => {
-            console.log("Connection failed")
-            ipcMain.emit("connecting_result", null, { success: false });
-            cleanup();
-        }
-
-        monitor.on("connectionActivated", handleConnectionActivated);
-        monitor.on("connectionFailed", handleConnectionFailed);
-        monitor.listenToJournal()
+        dbusMonitor.init()
+        dbusMonitor.on("stateChanged", handleDbusMonitorStateChange);
         
         ipcMain.emit("is_connecting");
 
@@ -201,7 +204,7 @@ const networkManager = (module.exports = {
                 return connection;
             } else {
                 attempts++;
-                await new Promise((resolve) => setTimeout(resolve, 500)); // Wait for 1 second before retrying
+                await new Promise((resolve) => setTimeout(resolve, 500));
             }
         }
 
@@ -230,6 +233,7 @@ const networkManager = (module.exports = {
             const line = lines[i].split(":");
             const name = line[0];
             const type = line[1];
+            console.log("Deleting connection:", name);
 
             if (type === "802-11-wireless") {
                 await networkManager.deleteConnectionBySSID(name);
