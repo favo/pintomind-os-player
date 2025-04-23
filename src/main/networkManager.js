@@ -114,7 +114,7 @@ const networkManager = (module.exports = {
         const handleDbusMonitorStateChange = async (statusCode) => {
             console.log("DbusMonitor stateChanged:", statusCode, ", last code", lastStatusCode);
             
-            if (statusCode == dbusMonitor.NM_STATE_CONNECTING) {
+            if (statusCode === dbusMonitor.NM_STATE_CONNECTING) {
                 if (timout) {
                     clearTimeout(timout)
                     timout = null
@@ -126,10 +126,10 @@ const networkManager = (module.exports = {
                 }, 8000)
             }
             
-            if (lastStatusCode == dbusMonitor.NM_STATE_CONNECTING && statusCode == dbusMonitor.NM_STATE_DISCONNECTED) {
+            if (lastStatusCode === dbusMonitor.NM_STATE_CONNECTING && statusCode === dbusMonitor.NM_STATE_DISCONNECTED) {
                 ipcMain.emit("connecting_result", null, { success: false });
                 cleanup()
-            } else if (statusCode == dbusMonitor.NM_STATE_CONNECTED_GLOBAL) {
+            } else if (statusCode === dbusMonitor.NM_STATE_CONNECTED_GLOBAL) {
                 const serverConnectionResult = await networkManager.attemptServerConnection();
                 ipcMain.emit("connecting_result", null, serverConnectionResult);
                 cleanup()

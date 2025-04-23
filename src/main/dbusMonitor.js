@@ -1,6 +1,33 @@
 const { spawn } = require("child_process");
 const { EventEmitter } = require("events");
 
+class DbusMonitorParser {
+    constructor(emitter) {
+        this.emitter = emitter;
+        this.isStateChangedSignal = false
+    }
+
+    parse(line){
+        line = line.trim();
+
+        const isSignal = line.match(/^signal/)
+
+        if (isSignal) {
+            this.isStateChangedSignal = line.includes("interface=org.freedesktop.NetworkManager") && line.includes("member=StateChanged")
+        }
+        else if(this.isStateChangedSignal){
+            const match = line.match(/uint32\s+(\d+)/);
+
+            if(match){
+                const statusCode = parseInt(match[1], 10);
+                this.emitter.emit("stateChanged", statusCode);
+
+                this.isStateChangedSignal = false
+            }
+        }
+    }
+}
+
 class DbusMonitor extends EventEmitter {
 
     NM_STATE_UNKNOWN          = 0  // networking state is unknown
@@ -16,13 +43,13 @@ class DbusMonitor extends EventEmitter {
         if (! this.dbusMonitor) {
             const dbusMonitorCommand = ["dbus-monitor", "--system", "interface='org.freedesktop.NetworkManager'"];
 
+            const parser = new DbusMonitorParser(this)
+
             this.dbusMonitor = spawn("sudo", dbusMonitorCommand);
 
             this.dbusMonitor.stdout.on("data", (data) => {
-                const line = data.toString().trim().replace("\n", " ");
-                console.log("New log line:", data.toString().trim());
-
-                this.processLogEntry(line);
+                const lines = data.toString().trim().split("\n");
+                lines.forEach(line => parser.parse(line))
             });
         
             this.dbusMonitor.stderr.on("data", (data) => {
@@ -39,21 +66,6 @@ class DbusMonitor extends EventEmitter {
         }
     }
 
-    processLogEntry(logEntry) {
-        const line = logEntry.trim();
-        const isNetworkManager = line.includes("interface=org.freedesktop.NetworkManager");
-        const isStateChanged = line.includes("member=StateChanged");
-    
-        if (isNetworkManager && isStateChanged) {
-            const match = line.match(/uint32\s+(\d+)/);
-
-            if (match) {
-                const statusCode = parseInt(match[1], 10);
-                this.emit("stateChanged", statusCode);
-            }
-        }
-    }
-
     kill() {
         if (this.dbusMonitor) {
             this.dbusMonitor.kill()
@@ -64,3 +76,4 @@ class DbusMonitor extends EventEmitter {
 
 const dbusMonitor = new DbusMonitor();
 exports.dbusMonitor = dbusMonitor;
+exports.DbusMonitorParser = DbusMonitorParser
