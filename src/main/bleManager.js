@@ -93,7 +93,6 @@ const bleManager = (module.exports = {
                 case RECEIVE_GET_DEVICE_SETTINGS:
                     const deviceSettings = await getDeviceSettings();
                     bleManager.send(SEND_DEVICE_SETTINGS, deviceSettings)
-
                     break;
                 case RECEIVE_GO_TO_SCREEN:
                     ipcMain.emit("go_to_screen");
