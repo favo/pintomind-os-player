@@ -217,7 +217,7 @@ ipcMain.on("search_after_networks", async (event, arg) => {
     }
 });
 
-ipcMain.on("request_system_stats", (event, arg) => {
+ipcMain.on("request_system_stats", async (event, arg) => {
     if (arg.interval) {
         if (systemStatsStream) {
             clearInterval(systemStatsStream);
@@ -229,7 +229,7 @@ ipcMain.on("request_system_stats", (event, arg) => {
         }, arg.interval);
     }
 
-    const systemStats = getSystemStats();
+    const systemStats = await getSystemStats();
     getWebContents().send("recieve_system_stats", systemStats);
 });
 
