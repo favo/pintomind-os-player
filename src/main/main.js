@@ -200,6 +200,7 @@ ipcMain.on("connect_to_network", (_event, arg) => {
 
 ipcMain.on("connecting_result", (_event, arg) => {
     getWebContents().send("connect_to_network_status", arg);
+    BleManager.sendNetworkStatus(arg)
 });
 
 ipcMain.on("ethernet_status", (_event, result) => {

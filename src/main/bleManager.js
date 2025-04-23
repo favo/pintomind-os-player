@@ -79,8 +79,7 @@ const bleManager = (module.exports = {
                     ipcMain.emit("connect_to_dns", null, content);
                     break;
                 case RECEIVE_CONNECT_TO_WIFI:
-                    const connectToNetwork = await NetworkManager.connectToNetwork(JSON.parse(content));
-                    bleManager.send(SEND_CONNECT_WIFI_RESPONSE, connectToNetwork)
+                    NetworkManager.connectToNetwork(JSON.parse(content));
                     break;
                 case RECEIVE_SCAN_AVAILABLE_NETWORKS:
                     const availableNetworks = await NetworkManager.scanAvailableNetworks();
@@ -111,6 +110,10 @@ const bleManager = (module.exports = {
         });
 
         bleManager.startBle()
+    },
+
+    sendNetworkStatus(status) {
+        bleManager.send(SEND_CONNECT_WIFI_RESPONSE, status)
     },
 
     stopNetworkStatusInterval() {

@@ -20,6 +20,7 @@ class DbusMonitor extends EventEmitter {
 
             this.dbusMonitor.stdout.on("data", (data) => {
                 const line = data.toString().trim().replace("\n", " ");
+                console.log("New log line:", data.toString().trim());
 
                 this.processLogEntry(line);
             });
@@ -47,8 +48,8 @@ class DbusMonitor extends EventEmitter {
             const match = line.match(/uint32\s+(\d+)/);
 
             if (match) {
-                const stateCode = parseInt(match[1], 10);
-                this.emit("stateChanged", stateCode);
+                const statusCode = parseInt(match[1], 10);
+                this.emit("stateChanged", statusCode);
             }
         }
     }

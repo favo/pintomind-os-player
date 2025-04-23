@@ -100,14 +100,32 @@ const networkManager = (module.exports = {
         console.log("Connection to:", ssid, ", with security:", security);
 
         let lastStatusCode; 
+        let timout;
 
         const cleanup = async () => {
             dbusMonitor.off("stateChanged", handleDbusMonitorStateChange);
             dbusMonitor.kill();
+            if (timout) {
+                clearTimeout(timout)
+                timout = null
+            }
         };
 
         const handleDbusMonitorStateChange = async (statusCode) => {
             console.log("DbusMonitor stateChanged:", statusCode, ", last code", lastStatusCode);
+            
+            if (statusCode == dbusMonitor.NM_STATE_CONNECTING) {
+                if (timout) {
+                    clearTimeout(timout)
+                    timout = null
+                }
+                
+                timout = setTimeout(() => {
+                    ipcMain.emit("connecting_result", null, { success: false });
+                    cleanup()
+                }, 8000)
+            }
+            
             if (lastStatusCode == dbusMonitor.NM_STATE_CONNECTING && statusCode == dbusMonitor.NM_STATE_DISCONNECTED) {
                 ipcMain.emit("connecting_result", null, { success: false });
                 cleanup()
