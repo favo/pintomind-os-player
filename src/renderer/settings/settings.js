@@ -24,6 +24,7 @@ window.onload = async () => {
     rotationButtons = document.getElementById("rotation-buttons").querySelectorAll("button");
     screenResolution = document.getElementById("screen-resolution");
     hiddenSsidField = document.getElementById("hidden-network");
+    hiddenSecurity = document.getElementById("hidden-network-security");
     statusMessage = document.getElementById("status-message");
     refreshButton = document.getElementById("refresh-button");
     errorMessage = document.getElementById("error-message");
@@ -161,12 +162,12 @@ function setButtonEvents() {
 
     hiddenNetworkButton.addEventListener("click", () => {
         const el = document.querySelector(".network-settings");
-        if (el.dataset.hiddenSsid === "1") {
+        if (hiddenSSID) {
             el.dataset.hiddenSsid = "0";
-            hiddenSSID = 0;
+            hiddenSSID = false;
         } else {
             el.dataset.hiddenSsid = "1";
-            hiddenSSID = 1;
+            hiddenSSID = true;
         }
     });
 
@@ -187,15 +188,16 @@ function connectToNetwork() {
     errorMessage.innerHTML = null;
 
     let ssid;
+    let security
     if (hiddenSSID) {
         ssid = hiddenSsidField.value;
-        // TODO Finne sikkerheten til hidden
+        security = hiddenSecurity.value
     } else {
         ssid = ssidField.value;
+        security = ssidField.options[ssidField.selectedIndex].dataset.security;
     }
 
     const passwordstring = passwordField.value;
-    const security = ssidField.options[ssidField.selectedIndex].dataset.security;
 
     resetSpinner();
 

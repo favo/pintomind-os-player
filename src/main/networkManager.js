@@ -3,9 +3,11 @@ const quote = require("shell-quote/quote");
 const { executeCommand } = require("./utils.js");
 const { ipcMain } = require("electron");
 const { store } = require("./store");
-const { DbusMonitor, NM_STATE_CONNECTED_GLOBAL } = require('./dbusMonitor');
+const { DbusMonitor, NM_STATE_CONNECTED_GLOBAL, NM_STATE_CONNECTING, NM_STATE_DISCONNECTED } = require('./dbusMonitor');
 
 let ethernetInterval;
+
+const NETWORK_TIMOUT = 25000
 
 const networkManager = (module.exports = {
     /**
@@ -24,8 +26,7 @@ const networkManager = (module.exports = {
      * // Output: "SSID: Network1\nSECURITY: WPA2\nSSID: Network2\nSECURITY: WEP"
      */
     async scanAvailableNetworks() {
-        const command = "nmcli --fields SSID,SECURITY --terse --mode multiline dev wifi list";
-        return await executeCommand(command);
+        return await executeCommand("nmcli --fields SSID,SECURITY --terse --mode multiline dev wifi list");
     },
 
     /**
@@ -96,7 +97,9 @@ const networkManager = (module.exports = {
         const password = data.password;
         const security = data.security || "";
 
-        console.log("Connection to:", ssid, ", with security:", security);
+        let lastStatusCode = null
+
+        console.log("Connection to:", ssid, ", with security:", security, "password:", password);
 
         ipcMain.emit("is_connecting");
         
@@ -108,9 +111,11 @@ const networkManager = (module.exports = {
                 clearTimeout(timeout)
             }
 
-            this.dbusMonitor.off("stateChanged", handleDbusMonitorStateChange);
-            this.dbusMonitor.kill();
-            this.dbusMonitor = null
+            if (this.dbusMonitor) {
+                this.dbusMonitor.off("stateChanged", handleDbusMonitorStateChange);
+                this.dbusMonitor.kill();
+                this.dbusMonitor = null
+            }
 
         };
 
@@ -121,19 +126,25 @@ const networkManager = (module.exports = {
         }
 
         const handleDbusMonitorStateChange = async (statusCode) => {
-            console.log("DbusMonitor stateChanged:", statusCode);
+            console.log("DbusMonitor stateChanged:", statusCode, "lastStatusCode:", lastStatusCode);
+
+            if (lastStatusCode === NM_STATE_CONNECTING && statusCode === NM_STATE_DISCONNECTED) {
+                onFailure()
+            }
             
             if (statusCode === NM_STATE_CONNECTED_GLOBAL) {
                 cleanup()
                 const serverConnectionResult = await this.attemptServerConnection();
                 ipcMain.emit("connecting_result", null, serverConnectionResult);
+
             }
+            lastStatusCode = statusCode
         }
 
         const timeout = setTimeout(() => {
             console.log("Connecting timeout");
             onFailure()
-        }, 20000)
+        }, NETWORK_TIMOUT)
 
         if (this.dbusMonitor) {
             cleanup()
@@ -176,11 +187,9 @@ const networkManager = (module.exports = {
      * @returns {JSONObject}
      */
     async connectToWiFi(ssid, password, security) {
-
         let connectCommand;
         if (security == "WPA3") {
-            // TODO 
-            connectCommand = quote(["nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
+            connectCommand = quote(["nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "sae", "wifi-sec.psk", password]);
         } else {
             connectCommand = quote(["nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
         }
