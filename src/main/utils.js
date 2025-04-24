@@ -9,7 +9,7 @@ const execAsync = promisify(nodeChildProcess.exec);
 
 const { getWebContents } = require('./windowManager');
 const { autoUpdater } = require("./autoUpdater");
-const { logger} = require("./appsignal");
+const { logger } = require("./appsignal");
 const { store } = require("./store");
 
 const utils = (module.exports = {
@@ -182,6 +182,7 @@ const utils = (module.exports = {
 
     async sendDeviceInfoToMainWindow() {
         const deviceInfo = await utils.sendDeviceInfo();
+        store.set("deviceInfo", deviceInfo);
         getWebContents().send("send_device_info", deviceInfo);
     },
 

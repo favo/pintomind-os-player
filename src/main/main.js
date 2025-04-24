@@ -10,6 +10,7 @@ const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 const { store } = require("./store");
 const { autoUpdater } = require("./autoUpdater");
 const { setMainWindow, getWebContents, getMainWindow } = require('./windowManager');
+const { logger } = require("./appsignal");
 
 const pjson = require("../../package.json");
 const QRCode = require("qrcode");
@@ -69,6 +70,10 @@ const createWindow = async () => {
     BleManager.enableBLE();
 
     setMainWindow(mainWindow)
+
+    mainWindow.webContents.on("did-fail-load", (e, errorCode, errorDescription, validatedURL) => {
+        logger.logError(new Error(`Failed to load URL: ${validatedURL} with error: ${errorDescription}`), "load", "main")
+    })
 
     mainWindow.on("closed", () => {
         setMainWindow(null);

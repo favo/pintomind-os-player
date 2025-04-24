@@ -16,9 +16,23 @@ class Logger {
             this.appsignal.sendError(message, (span) => {
                 span.setAction(action);
                 span.setNamespace(namespace);
-                span.setTags(Object.assign({ host: store.get("host") }, tags || {}));
+                span.setTags(Object.assign(this.createTags(), tags || {}));
             });
         }
+    }
+
+    createTags(){
+        const tags = {
+            host: store.get("host")
+        }
+
+        const deviceInfo = store.get("deviceInfo")
+
+        if(deviceInfo) {
+            tags.bluetooth_id = deviceInfo['Bluetooth-ID']
+        }
+
+        return tags
     }
 }
 
