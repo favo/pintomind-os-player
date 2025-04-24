@@ -3,7 +3,7 @@ const quote = require("shell-quote/quote");
 const { executeCommand } = require("./utils.js");
 const { ipcMain } = require("electron");
 const { store } = require("./store");
-const { dbusMonitor } = require("./dbusMonitor");
+const { DbusMonitor, NM_STATE_CONNECTED_GLOBAL } = require('./dbusMonitor');
 
 let ethernetInterval;
 
@@ -95,65 +95,64 @@ const networkManager = (module.exports = {
         const ssid = data.ssid;
         const password = data.password;
         const security = data.security || "";
-        const options = data.options || {};
 
         console.log("Connection to:", ssid, ", with security:", security);
 
-        let lastStatusCode; 
-        let timout;
-
-        const cleanup = async () => {
-            dbusMonitor.off("stateChanged", handleDbusMonitorStateChange);
-            dbusMonitor.kill();
-            if (timout) {
-                clearTimeout(timout)
-                timout = null
-            }
-        };
-
-        const handleDbusMonitorStateChange = async (statusCode) => {
-            console.log("DbusMonitor stateChanged:", statusCode, ", last code", lastStatusCode);
-            
-            if (statusCode === dbusMonitor.NM_STATE_CONNECTING) {
-                if (timout) {
-                    clearTimeout(timout)
-                    timout = null
-                }
-                
-                timout = setTimeout(() => {
-                    ipcMain.emit("connecting_result", null, { success: false });
-                    cleanup()
-                }, 8000)
-            }
-            
-            if (lastStatusCode === dbusMonitor.NM_STATE_CONNECTING && statusCode === dbusMonitor.NM_STATE_DISCONNECTED) {
-                ipcMain.emit("connecting_result", null, { success: false });
-                cleanup()
-            } else if (statusCode === dbusMonitor.NM_STATE_CONNECTED_GLOBAL) {
-                const serverConnectionResult = await networkManager.attemptServerConnection();
-                ipcMain.emit("connecting_result", null, serverConnectionResult);
-                cleanup()
-            }
-            
-            lastStatusCode = statusCode
-        }
-
-        dbusMonitor.init()
-        dbusMonitor.on("stateChanged", handleDbusMonitorStateChange);
-        
         ipcMain.emit("is_connecting");
-
+        
         await networkManager.resetAllConnections()
 
-        if (options.hidden) {
-            // Connect to hidden network if specified
-            await networkManager.connectToHiddenNetwork(ssid, password);
-        } else if (security.includes("WPA") && password) {
-            // Connect to WPA secured network if password is provided
-            await networkManager.connectToWPANetwork(ssid, password);
+        const cleanup = async () => {
+            console.log("Cleaning up");
+            if (timeout) {
+                clearTimeout(timeout)
+            }
+
+            this.dbusMonitor.off("stateChanged", handleDbusMonitorStateChange);
+            this.dbusMonitor.kill();
+            this.dbusMonitor = null
+
+        };
+
+        const onFailure = async () => {
+            cleanup()
+            ipcMain.emit("connecting_result", null, { success: false });
+            await networkManager.resetAllConnections()
+        }
+
+        const handleDbusMonitorStateChange = async (statusCode) => {
+            console.log("DbusMonitor stateChanged:", statusCode);
+            
+            if (statusCode === NM_STATE_CONNECTED_GLOBAL) {
+                cleanup()
+                const serverConnectionResult = await this.attemptServerConnection();
+                ipcMain.emit("connecting_result", null, serverConnectionResult);
+            }
+        }
+
+        const timeout = setTimeout(() => {
+            console.log("Connecting timeout");
+            onFailure()
+        }, 20000)
+
+        if (this.dbusMonitor) {
+            cleanup()
+        }
+
+        this.dbusMonitor = new DbusMonitor()
+        this.dbusMonitor.init()
+        this.dbusMonitor.on("stateChanged", handleDbusMonitorStateChange);
+        
+        let result
+        if (security.includes("WPA") && password) {
+            result = await this.connectToWiFi(ssid, password, security);
         } else {
-            // Connect to unsecured network
-            await networkManager.connectToUnsecureNetwork(ssid);
+            result = await this.connectToUnsecureNetwork(ssid);
+        }
+
+        if (!result.success) {
+            console.log("Result:", result);
+            onFailure()
         }
     },
 
@@ -173,28 +172,20 @@ const networkManager = (module.exports = {
      * Function for connection to a WPA3 network
      * @param {String} ssid
      * @param {String} password
+     * @param {String} security
      * @returns {JSONObject}
      */
-    async connectToWPANetwork(ssid, password) {
-        const connectCommand = quote(["nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
+    async connectToWiFi(ssid, password, security) {
 
-        await executeCommand(connectCommand, "WPA network connection");
-    },
-
-    /**
-     * Function for connection to a hidden network
-     * @param {String} ssid
-     * @param {String} password
-     * @returns {Boolean}
-     */
-    async connectToHiddenNetwork(ssid, password) {
-        const addConnectionCommand = quote(["nmcli", "conn", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
-
-        await executeCommand(addConnectionCommand, "Network connection");
-
-        if (connectionResult.success && connectionResult.stdout.includes("successfully added")) {
-            await executeCommand(`nmcli conn up "${ssid}"`);
+        let connectCommand;
+        if (security == "WPA3") {
+            // TODO 
+            connectCommand = quote(["nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
+        } else {
+            connectCommand = quote(["nmcli", "connection", "add", "type", "wifi", "ifname", "wlan0", "con-name", ssid, "ssid", ssid, "--", "wifi-sec.key-mgmt", "wpa-psk", "wifi-sec.psk", password]);
         }
+
+        return await executeCommand(connectCommand, "WPA network connection");
     },
 
     /**
@@ -251,9 +242,9 @@ const networkManager = (module.exports = {
             const line = lines[i].split(":");
             const name = line[0];
             const type = line[1];
-            console.log("Deleting connection:", name);
-
+            
             if (type === "802-11-wireless") {
+                console.log("Deleting connection:", name);
                 await networkManager.deleteConnectionBySSID(name);
             }
             else if(type === "802-3-ethernet") {

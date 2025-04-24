@@ -187,10 +187,9 @@ function connectToNetwork() {
     errorMessage.innerHTML = null;
 
     let ssid;
-    let options = {};
     if (hiddenSSID) {
         ssid = hiddenSsidField.value;
-        options["hidden"] = true;
+        // TODO Finne sikkerheten til hidden
     } else {
         ssid = ssidField.value;
     }
@@ -202,7 +201,7 @@ function connectToNetwork() {
 
     if (security.includes("WPA") && passwordstring) {
         /* Case 1: Password field is filled, network network requires it and we try to connect */
-        window.api.send("connect_to_network", { ssid: ssid, password: passwordstring, security: security, options: options });
+        window.api.send("connect_to_network", { ssid: ssid, password: passwordstring, security: security});
     } else if (security.includes("WPA") && !passwordstring) {
         /* Case 2: Password field is empty and network requires it */
         isConnecting = false;
