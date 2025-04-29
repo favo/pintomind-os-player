@@ -309,21 +309,6 @@ const utils = (module.exports = {
     },
 
     /**
-     * Turns off the connected display using a system script.
-     * 
-     * Executes the `/home/pi/.turn_off_display.sh` script to power off the connected display.
-     * This command is executed asynchronously, and its result is returned.
-     *
-     * @async
-     * @returns {Promise<object>} 
-     */
-    async turnDisplayOff() {
-        const command = "/home/pi/.turn_off_display.sh";
-
-        return await utils.executeCommand(command);
-    },
-
-    /**
      * Updates the display configuration using a system script.
      * 
      * Executes the `/home/pi/.adjust_video.sh` script to adjust the video output settings

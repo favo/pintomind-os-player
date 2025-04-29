@@ -1,9 +1,10 @@
 const { rebootDevice, updateApp, updateFirmware, updateBleBridge, getSystemStats, setScreenRotation,
-    setScreenResolution, getAllScreenResolution, readBluetoothID, turnDisplayOff, updateDisplayConfiguration, 
-    setSettingsFromPlayerConfig, parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID } = require("./utils");
+    setScreenResolution, getAllScreenResolution, readBluetoothID, setSettingsFromPlayerConfig, 
+    parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID } = require("./utils");
 
 const NetworkManager = require("./networkManager");
 const BleManager = require("./bleManager");
+const DisplayManager = require("./displayManager")
 
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 
@@ -137,6 +138,15 @@ app.whenReady().then(() => {
     globalShortcut.register("CommandOrControl+G", () => {
         getMainWindow().loadFile(path.join(__dirname, "../renderer/get_started/get_started.html"));
     });
+
+    globalShortcut.register("CommandOrControl+F", () => {
+        const dm = new DisplayManager()
+        dm.safeTurnOn()
+    });
+    globalShortcut.register("CommandOrControl+V", () => {
+        const dm = new DisplayManager()
+        dm.safeTurnOff()
+    });
     
     /* Toggle devMode */
     globalShortcut.register("CommandOrControl+D+M", () => {
@@ -179,14 +189,6 @@ ipcMain.on("update_app", (event, arg) => {
 
 ipcMain.on("pincode", (event, pincode) => {
     BleManager.sendPincodeToBluetooth(pincode)
-});
-
-ipcMain.on("wake", (event, arg) => {
-    updateDisplayConfiguration();
-});
-
-ipcMain.on("sleep", (event, arg) => {
-    turnDisplayOff();
 });
 
 ipcMain.on("factory_reset", (event, arg) => {
