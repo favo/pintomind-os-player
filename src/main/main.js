@@ -1,5 +1,5 @@
-const { rebootDevice, updateApp, updateFirmware, updateBleBridge, getSystemStats, setScreenRotation,
-    setScreenResolution, getAllScreenResolution, readBluetoothID, setSettingsFromPlayerConfig, 
+const { rebootDevice, updateFirmware, getSystemStats, setScreenRotation,
+    setScreenResolution, getAllScreenResolution, readBluetoothID, setSettingsFromPlayerConfig,
     parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID } = require("./utils");
 
 const NetworkManager = require("./networkManager");
@@ -9,7 +9,6 @@ const DisplayManager = require("./displayManager")
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 
 const { store } = require("./store");
-const { autoUpdater } = require("./autoUpdater");
 const { setMainWindow, getWebContents, getMainWindow } = require('./windowManager');
 const { logger } = require("./appsignal");
 
@@ -79,8 +78,6 @@ const createWindow = async () => {
     mainWindow.on("closed", () => {
         setMainWindow(null);
     });
-
-    updateApp();
 };
 
 app.on("ready", () => {
@@ -120,7 +117,6 @@ app.whenReady().then(() => {
     /* Update app */
     globalShortcut.register("CommandOrControl+U", () => {
         console.log("Checking and Updating App..");
-        updateApp();
     });
     
     /* Opens settings page */
@@ -147,18 +143,16 @@ app.whenReady().then(() => {
         const dm = new DisplayManager()
         dm.safeTurnOff()
     });
-    
+
     /* Toggle devMode */
     globalShortcut.register("CommandOrControl+D+M", () => {
         const devMode = store.get("devMode", false);
 
         if (devMode) {
             store.set("devMode", false);
-            autoUpdater.allowPrerelease = false;
             getWebContents().send("devMode", false);
         } else {
             store.set("devMode", true);
-            autoUpdater.allowPrerelease = true;
             getWebContents().send("devMode", true);
         }
     });
@@ -179,12 +173,11 @@ ipcMain.on("request_device_info", async (event, arg) => {
 });
 
 ipcMain.on("upgrade_firmware", async (event, arg) => {
-    await updateBleBridge();
     updateFirmware();
 });
 
 ipcMain.on("update_app", (event, arg) => {
-    updateApp();
+    console.log("update app")
 });
 
 ipcMain.on("pincode", (event, pincode) => {

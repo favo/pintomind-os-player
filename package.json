@@ -1,6 +1,6 @@
 {
     "name": "pintomind-player",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "Player app for PinToMind",
     "main": "src/main/main.js",
     "scripts": {
@@ -19,17 +19,32 @@
     },
     "build": {
         "appId": "com.favo.app",
-        "productName": "PinToMind Player",
-        "artifactName": "pintomind-player.${ext}",
+        "productName": "pintomind-player",
         "linux": {
             "category": "Utility",
             "packageCategory": "utils",
+            "executableName": "pintomind-player",
+            "artifactName": "pintomind-player_${version}_${arch}.${ext}",
+            "maintainer": "Favo AS <develop@favo.no>",
+            "extraFiles": [
+                {
+                    "from": "debian/systemd/",
+                    "to": "etc/systemd/user/"
+                }
+            ],
             "target": {
-                "target": "AppImage",
+                "target": "deb",
                 "arch": [
                     "arm64"
                 ]
             }
+        },
+        "deb": {
+            "afterInstall": "debian/postinst",
+            "depends": [
+                "pintomind-player-runtime",
+                "pintomind-ble-bridge"
+            ]
         }
     },
     "author": {

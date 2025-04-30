@@ -37,13 +37,13 @@ class DisplayManager {
 
     async turnDisplayOnViaScript() {
         console.log("Turning display ON via system script...");
-        const command = "/home/pi/.adjust_video.sh";
+        const command = "/opt/pintomind/runtime/apply_display_config";
         return await executeCommand(command);
     }
 
     async turnDisplayOffViaScript() {
         console.log("Turning display OFF via system script...");
-        const command = "/home/pi/.turn_off_display.sh";
+        const command = "/opt/pintomind/runtime/turn_off_display";
         return await executeCommand(command);
     }
 

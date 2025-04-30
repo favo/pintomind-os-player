@@ -1,0 +1,12 @@
+#!/bin/bash
+set -e
+
+echo "🔧 Enabling pintomind-player service..."
+
+USERNAME=pi
+
+cp /opt/pintomind-player/etc/systemd/user/pintomind-player.service /etc/systemd/user
+sudo -u $USERNAME mkdir -p /home/pi/.config/systemd/user/default.target.wants/
+sudo -u $USERNAME ln -sf /etc/systemd/user/pintomind-player.service /home/pi/.config/systemd/user/default.target.wants/pintomind-player.service
+
+echo "✅ Service enabled - reboot - or run systemctl --user restart pintomind-player to start."

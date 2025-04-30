@@ -8,7 +8,6 @@ const { promisify } = require("util");
 const execAsync = promisify(nodeChildProcess.exec);
 
 const { getWebContents } = require('./windowManager');
-const { autoUpdater } = require("./autoUpdater");
 const { logger } = require("./appsignal");
 const { store } = require("./store");
 
@@ -103,14 +102,14 @@ const utils = (module.exports = {
     /**
      * Updates the device firmware by executing a system upgrade script.
      * 
-     * Executes the firmware upgrade command located at `/home/pi/.system-upgrade.sh`. 
+     * Executes the firmware upgrade command located at `/opt/pintomind/runtime/system_upgrade`.
      * If the command executes successfully, the device is rebooted to apply the updates.
      *
      * @async
      * @returns {Promise<void>} Resolves when the firmware update process is complete.
      */
     async updateFirmware() {
-        const command = "/home/pi/.system-upgrade.sh";
+        const command = "/opt/pintomind/runtime/system_upgrade";
 
         const result = await utils.executeCommand(command);
 
@@ -186,28 +185,6 @@ const utils = (module.exports = {
         getWebContents().send("send_device_info", deviceInfo);
     },
 
-    /**
-     * Checks for app updates using the autoUpdater.
-     * 
-     * @throws {Error} If there is an issue with the `checkForUpdates` method, the error is logged but not rethrown.
-     */
-    updateApp() {
-        try {
-            autoUpdater.checkForUpdates();
-        } catch (error) {
-            logger.logError(error,  "updateApp", "utils")
-        }
-    },
-
-    async updateBleBridge() {
-        const devMode = store.get("devMode", false);
-        const branch = devMode ? "develop" : "main"
-        const url = `git+https://github.com/favo/ble-bridge.git\#${branch}`
-
-        await utils.executeCommand("sudo systemctl stop ble-bridge")
-        await utils.executeCommand(`sudo npm install -g ${url}`)
-        await utils.executeCommand("sudo systemctl start ble-bridge")
-    },
 
     /**
      * Reads and returns the configuration from the `player-config.json` file.
@@ -287,7 +264,7 @@ const utils = (module.exports = {
 
             fs.writeFileSync("./rotation", rotation);   
             
-            await utils.updateDisplayConfiguration()
+            await utils.applyDisplayConfiguration()
         } catch(error) {
             logger.logError(error,  "setScreenRotation", "utils")
         }
@@ -311,14 +288,14 @@ const utils = (module.exports = {
     /**
      * Updates the display configuration using a system script.
      * 
-     * Executes the `/home/pi/.adjust_video.sh` script to adjust the video output settings
+     * Executes the `/opt/pintomind/runtime/apply_display_config` script to adjust the video output settings
      * of the connected display. This command is executed asynchronously, and its result is returned.
      *
      * @async
      * @returns {Promise<object>}
      */
-    async updateDisplayConfiguration() {
-        const command = "/home/pi/.adjust_video.sh";
+    async applyDisplayConfiguration() {
+        const command = "/opt/pintomind/runtime/apply_display_config";
 
         return await utils.executeCommand(command);
     },
@@ -387,7 +364,7 @@ const utils = (module.exports = {
      * Sets the screen resolution by writing to the `resolution` file and updating the display configuration.
      * 
      * This function takes a resolution string, writes it to the `resolution` file, and then calls the
-     * `updateDisplayConfiguration` function to apply the changes. If an error occurs during the process, 
+     * `applyDisplayConfiguration` function to apply the changes. If an error occurs during the process, 
      * the error is logged via AppSignal.
      * 
      * @async
@@ -402,7 +379,7 @@ const utils = (module.exports = {
     async setScreenResolution(resolution) {
         try {
             fs.writeFileSync("./resolution", resolution);
-            return await utils.updateDisplayConfiguration()
+            return await utils.applyDisplayConfiguration()
         } catch(error) {
             logger.logError(error,  "setScreenResolution", "utils")
         }
