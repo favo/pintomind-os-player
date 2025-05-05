@@ -3,6 +3,8 @@
 SOURCE=$1
 DESTINATION=$2
 
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+source "$SCRIPT_DIR/options.sh"
 
 if [ -z "$SOURCE" ]; then
   echo "FEIL: Oppgi fil du ønsker å kopiere"
@@ -10,14 +12,23 @@ if [ -z "$SOURCE" ]; then
 fi
 
 if [ -z "$DESTINATION" ]; then
-  echo "FEIL: Oppgi ip addresse eller servernavn til pi'en du vil publisere til"
-  exit 1
+  LAST_IP_FILE="$SCRIPT_DIR/last_ip_address.txt"
+
+  if [ -f "$LAST_IP_FILE" ]; then
+    DESTINATION=$(cat "$LAST_IP_FILE")
+  else
+    echo "FEIL: Oppgi ip addresse eller servernavn til pi'en du vil kopiere til"
+    exit 1
+  fi
 fi
 
-DESTINATION="pi@$DESTINATION"
-SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+if [[ "$DESTINATION" != *:* ]]; then
+  DESTINATION="$DESTINATION:/home/pi"
+fi
 
-source "$SCRIPT_DIR/options.sh"
+if [[ "$DESTINATION" != *@* ]]; then
+  DESTINATION="pi@$DESTINATION"
+fi
 
 echo "Copying file from $SOURCE to $DESTINATION..."
 scp $SSH_OPTIONS $SOURCE $DESTINATION
