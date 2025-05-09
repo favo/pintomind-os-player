@@ -1,0 +1,14 @@
+
+#top-right {
+    position: absolute;
+    top: 2vw;
+    right: 2vw;
+    height: 21%; 
+    pointer-events: none;
+}
+  
+@media (orientation: portrait) {
+    #top-right {
+        height: 10%;
+    }
+}

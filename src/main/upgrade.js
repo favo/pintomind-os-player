@@ -1,21 +1,11 @@
-const { rebootDevice, updateApp, updateFirmware, updateBleBridge, getSystemStats, setScreenRotation,
-    setScreenResolution, getAllScreenResolution, readBluetoothID, turnDisplayOff, updateDisplayConfiguration, 
-    setSettingsFromPlayerConfig, parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID } = require("./utils");
+const { setSettingsFromPlayerConfig } = require("./utils");
 
-const NetworkManager = require("./networkManager");
-const BleManager = require("./bleManager");
 
-const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
+const { app, BrowserWindow  } = require("electron");
 
-const { store } = require("./store");
-const { autoUpdater } = require("./autoUpdater");
 const { setMainWindow, getWebContents, getMainWindow } = require('./windowManager');
 
-const pjson = require("../../package.json");
-const QRCode = require("qrcode");
 const path = require("path");
-const fs = require("fs");
-
 
 app.commandLine.appendSwitch('gl', 'egl')
 app.commandLine.appendSwitch('enable-gpu-rasterization');  // GPU for video rendering
@@ -24,8 +14,6 @@ app.commandLine.appendSwitch('enable-zero-copy');  // Efficient video frame hand
 app.commandLine.appendSwitch('disable-software-video-decoder');  // Force hardware decoding
 app.commandLine.appendSwitch('enable-native-gpu-memory-buffers');
 app.commandLine.appendSwitch('disable-gpu-driver-bug-workarounds');
-
-let systemStatsStream;
 
 const createWindow = async () => {
 
