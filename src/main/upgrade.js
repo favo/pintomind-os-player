@@ -87,6 +87,7 @@ async function upgrade(){
     "curl -fsSL https://deb.pintomind.com/pubkey.asc | sudo gpg --dearmor -o /etc/apt/keyrings/pintomind.gpg"
     "echo 'deb [arch=arm64 signed-by=/etc/apt/keyrings/pintomind.gpg] https://deb.pintomind.com stable main' | sudo tee /etc/apt/sources.list.d/pintomind.list"
     "sudo apt-get update"
+    "sudo apt-get full-upgrade"
     "sudo apt-get install -y pintomind-player"
 
 
