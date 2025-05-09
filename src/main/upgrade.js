@@ -79,16 +79,28 @@ app.on("activate", () => {
 async function upgrade(){
 
     // stoppe om en av kommandoene feiler
-    // fjerne de servicene som er enablet, ble-bridge.service, bluetooth-power.service, pintomind-player.service
-    // være sikker på at det vil fungere selv om filene ikke fins lengre.
+    // fjerne de servicene som er enablet,
+    // ble-bridge.service, bluetooth-power.service, pintomind-player.service
 
-    ///etc/xdg/systemd/user/pintomind-player.service
-    ///home/pi/.config/systemd/user/default.target.wants
+    // ble-bridge.service
+    "sudo rm -f /etc/systemd/system/ble-bridge.service"
+    "sudo rm -f /etc/systemd/system/multi-user.target.wants/ble-bridge.service"
+
+    // bluetooth-power.service
+    "sudo rm -f /etc/systemd/system/bluetooth-power.service"
+    "sudo rm -f /etc/systemd/system/multi-user.target.wants/bluetooth-power.service"
+
+    // pintomind-player.service
+    "sudo rm -f /etc/systemd/user/pintomind-player.service"
+    "sudo rm -f /home/pi/.config/systemd/user/default.target.wants/pintomind-player.service"
+    "sudo rm -f /etc/xdg/systemd/user/pintomind-player.service"
 
     // Install pintomind packages
+    "curl -fsSL https://deb.pintomind.com/pubkey.asc | sudo gpg --dearmor -o /etc/apt/keyrings/pintomind.gpg"
+    "echo 'deb [arch=arm64 signed-by=/etc/apt/keyrings/pintomind.gpg] https://deb.pintomind.com stable main' | sudo tee /etc/apt/sources.list.d/pintomind.list"
+    "sudo apt-get update"
+    "sudo apt-get install -y pintomind-player"
 
-    // curl -fsSL https://deb.pintomind.com/pubkey.asc | gpg --dearmor -o /etc/apt/keyrings/pintomind.gpg
-    // echo "deb [arch=arm64  signed-by=/etc/apt/keyrings/pintomind.gpg] https://deb.pintomind.com stable main" > /etc/apt/sources.list.d/pintomind.list
 
     // apt-get update
     // apt-get install -y pintomind-player
