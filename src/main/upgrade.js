@@ -3,6 +3,7 @@ const { setSettingsFromPlayerConfig } = require("./utils");
 
 const { app, BrowserWindow  } = require("electron");
 
+const { executeCommand } = require("./utils.js");
 const { setMainWindow, getWebContents, getMainWindow } = require('./windowManager');
 
 const path = require("path");
@@ -65,34 +66,6 @@ app.on("activate", () => {
 });
 
 async function upgrade(){
-
-    // stoppe om en av kommandoene feiler
-    // fjerne de servicene som er enablet,
-    // ble-bridge.service, bluetooth-power.service, pintomind-player.service
-
-    // ble-bridge.service
-    "sudo rm -f /etc/systemd/system/ble-bridge.service"
-    "sudo rm -f /etc/systemd/system/multi-user.target.wants/ble-bridge.service"
-
-    // bluetooth-power.service
-    "sudo rm -f /etc/systemd/system/bluetooth-power.service"
-    "sudo rm -f /etc/systemd/system/multi-user.target.wants/bluetooth-power.service"
-
-    // pintomind-player.service
-    "sudo rm -f /etc/systemd/user/pintomind-player.service"
-    "sudo rm -f /home/pi/.config/systemd/user/default.target.wants/pintomind-player.service"
-    "sudo rm -f /etc/xdg/systemd/user/pintomind-player.service"
-
-    // Install pintomind packages
-    "curl -fsSL https://deb.pintomind.com/pubkey.asc | sudo gpg --dearmor -o /etc/apt/keyrings/pintomind.gpg"
-    "echo 'deb [arch=arm64 signed-by=/etc/apt/keyrings/pintomind.gpg] https://deb.pintomind.com stable main' | sudo tee /etc/apt/sources.list.d/pintomind.list"
-    "sudo apt-get update"
-    "sudo apt-get full-upgrade"
-    "sudo apt-get install -y pintomind-player"
-
-
-    // apt-get update
-    // apt-get install -y pintomind-player
-    // reboot
-
+    const command = "/home/pi/.upgrade.sh";
+    await executeCommand(command);
 }
