@@ -4,7 +4,7 @@ const { setSettingsFromPlayerConfig } = require("./utils");
 const { app, BrowserWindow  } = require("electron");
 
 const { executeCommand } = require("./utils.js");
-const { setMainWindow, getWebContents, getMainWindow } = require('./windowManager');
+const { setMainWindow } = require('./windowManager');
 
 const path = require("path");
 
@@ -66,6 +66,35 @@ app.on("activate", () => {
 });
 
 async function upgrade(){
-    const command = "/home/pi/.upgrade.sh";
-    await executeCommand(command);
+    console.log("==> Removing old services...");
+    
+    // Remove ble-bridge.service
+    await executeCommand("sudo rm -f /etc/systemd/system/ble-bridge.service");
+    await executeCommand("sudo rm -f /etc/systemd/system/multi-user.target.wants/ble-bridge.service");
+    
+    // Remove bluetooth-power.service 
+    await executeCommand("sudo rm -f /etc/systemd/system/bluetooth-power.service");
+    await executeCommand("sudo rm -f /etc/systemd/system/multi-user.target.wants/bluetooth-power.service");
+    
+    // Remove pintomind-player.service
+    await executeCommand("sudo rm -f /etc/systemd/user/pintomind-player.service");
+    await executeCommand("sudo rm -f /home/pi/.config/systemd/user/default.target.wants/pintomind-player.service");
+    await executeCommand("sudo rm -f /etc/xdg/systemd/user/pintomind-player.service");
+    
+    console.log("==> Installing Pintomind Player...");
+
+    // Add Pintomind APT key and repository
+    await executeCommand("sudo mkdir -p /etc/apt/keyrings");
+    await executeCommand("curl -fsSL https://deb.pintomind.com/pubkey.asc | sudo gpg --dearmor -o /etc/apt/keyrings/pintomind.gpg");
+    
+    await executeCommand("echo 'deb [arch=arm64 signed-by=/etc/apt/keyrings/pintomind.gpg] https://deb.pintomind.com stable main' | sudo tee /etc/apt/sources.list.d/pintomind.list");
+
+    console.log("Update and install pintomind-player");
+    
+    await executeCommand("sudo apt-get update");
+    await executeCommand("sudo apt-get full-upgrade -y");
+    await executeCommand("sudo apt-get install -y pintomind-player");
+
+    console.log("==> Setup complete. Rebooting...");
+    await executeCommand("sudo reboot");
 }
