@@ -77,15 +77,15 @@ async function upgrade(){
     await executeCommand("sudo rm -f /etc/systemd/system/multi-user.target.wants/bluetooth-power.service");
     
     // Remove pintomind-player.service
-    await executeCommand("sudo rm -f /etc/systemd/user/pintomind-player.service");
-    await executeCommand("sudo rm -f /home/pi/.config/systemd/user/default.target.wants/pintomind-player.service");
-    await executeCommand("sudo rm -f /etc/xdg/systemd/user/pintomind-player.service");
+    // await executeCommand("sudo rm -f /etc/systemd/user/pintomind-player.service");
+    // await executeCommand("sudo rm -f /home/pi/.config/systemd/user/default.target.wants/pintomind-player.service");
+    // await executeCommand("sudo rm -f /etc/xdg/systemd/user/pintomind-player.service");
     
     console.log("==> Installing Pintomind Player...");
 
     // Add Pintomind APT key and repository
     await executeCommand("sudo mkdir -p /etc/apt/keyrings");
-    await executeCommand("curl -fsSL https://deb.pintomind.com/pubkey.asc | sudo gpg --dearmor -o /etc/apt/keyrings/pintomind.gpg");
+    await executeCommand("curl -fsSL https://deb.pintomind.com/pubkey.asc | gpg --dearmor | sudo tee /etc/apt/keyrings/pintomind.gpg > /dev/null");
     
     await executeCommand("echo 'deb [arch=arm64 signed-by=/etc/apt/keyrings/pintomind.gpg] https://deb.pintomind.com stable main' | sudo tee /etc/apt/sources.list.d/pintomind.list");
 
