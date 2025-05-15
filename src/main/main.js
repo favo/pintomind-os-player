@@ -1,10 +1,10 @@
-const { rebootDevice, updateFirmware, getSystemStats, setScreenRotation,
-    setScreenResolution, getAllScreenResolution, readBluetoothID, setSettingsFromPlayerConfig,
+const { rebootDevice, getSystemStats,readBluetoothID, setSettingsFromPlayerConfig,
     parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID } = require("./utils");
 
 const NetworkManager = require("./networkManager");
 const BleManager = require("./bleManager");
 const DisplayManager = require("./displayManager")
+const UpdateManager = require("./updateManager")
 
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 
@@ -94,7 +94,6 @@ app.on("activate", () => {
     }
 });
 
-
 app.whenReady().then(() => {
     /* reboot device */
     globalShortcut.register("CommandOrControl+A", () => {
@@ -173,11 +172,11 @@ ipcMain.on("request_device_info", async (event, arg) => {
 });
 
 ipcMain.on("upgrade_firmware", async (event, arg) => {
-    updateFirmware();
+    UpdateManager.runSystemUpgrade();
 });
 
 ipcMain.on("update_app", (event, arg) => {
-    console.log("update app")
+    UpdateManager.runAppUpgrade()
 });
 
 ipcMain.on("pincode", (event, pincode) => {
@@ -237,24 +236,23 @@ ipcMain.on("is_connecting", async (_event, arg) => {
     getWebContents().send("is_connecting");
 });
 
-
 ipcMain.on("getFromStore", (_event, key) => {
     const value = store.get(key);
     getWebContents().send(key, value);
 });
 
 ipcMain.on("set_screen_rotation", async (_event, rotation) => {
-    setScreenRotation(rotation);
+    DisplayManager.setScreenRotation(rotation);
     sendDeviceInfoToMainWindow()
 });
 
 ipcMain.on("set_screen_resolution", async (event, resolution) => {
-    setScreenResolution(resolution);
+    DisplayManager.setScreenResolution(resolution);
     sendDeviceInfoToMainWindow()
 });
 
 ipcMain.on("get_screen_resolutions", async (event, arg) => {
-    const screenResolutions = await getAllScreenResolution();
+    const screenResolutions = await DisplayManager.getAllScreenResolution();
     getWebContents().send("get_screen_resolutions", screenResolutions);    
 });
 
@@ -337,8 +335,8 @@ async function factoryReset() {
     });
 
     await NetworkManager.resetAllConnections();
-    await setScreenRotation("normal");
-    await setScreenResolution("1920x1080");
+    await DisplayManager.setScreenRotation("normal");
+    await DisplayManager.setScreenResolution("1920x1080");
     await setBluetoothID("");
 
     const getAppPath = path.join(app.getPath("appData"), pjson.name);

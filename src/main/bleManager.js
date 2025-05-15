@@ -1,5 +1,6 @@
-const { setScreenRotation, setScreenResolution, parseWiFiScanResults, readBluetoothID, getDeviceSettings } = require("./utils.js");
+const { parseWiFiScanResults, readBluetoothID, getDeviceSettings } = require("./utils.js");
 const NetworkManager = require("./networkManager");
+const DisplayManager = require("./displayManager")
 
 const io = require("socket.io-client");
 let bleSocket = io("ws://127.0.0.1:3333");
@@ -70,10 +71,10 @@ const bleManager = (module.exports = {
                     ipcMain.emit("set_host", null, { host: content.toString(), reload: true });
                     break;
                 case RECEIVE_SET_ROTATION:
-                    setScreenRotation(content);
+                    DisplayManager.setScreenRotation(content);
                     break;
                 case RECEIVE_SET_RESOLUTION:
-                    setScreenResolution(content);
+                    DisplayManager.setScreenResolution(content);
                     break;
                 case RECEIVE_SET_DNS:
                     ipcMain.emit("connect_to_dns", null, content);

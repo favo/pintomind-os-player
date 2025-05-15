@@ -52,9 +52,6 @@ window.onload = function () {
             case "reboot":
                 sendMessageToMain("reboot_device");
                 break;
-            case "update_app":
-                sendMessageToMain("update_app");
-                break;
             case "pincode":
                 // Gets pincode from butler
                 sendMessageToMain("pincode", {pincode: request.pincode});

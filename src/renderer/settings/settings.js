@@ -57,6 +57,10 @@ window.onload = async () => {
         hostAddress.value = host;
     })
 
+    getFromStore("devMode", (devMode) => {
+        window.document.body.dataset.devMode = devMode;
+    });
+
     window.api.receive("list_of_networks", (data) => {
         displayListOfNetworks(data);
     });
@@ -85,11 +89,6 @@ window.onload = async () => {
         spinner.classList.add("spin");
         setStatusMessage(languageData["dns_registring"]);
     })
-
-    window.api.resultFromStore("devMode", (devMode) => {
-        window.document.body.dataset.devMode = devMode;
-    });
-    window.api.getFromStore("devMode");
 
     sendRecieveToMain("create_qr_code", { lightColor: "#000000", darkColor: "#828282" }, (data) => {
         canvas.src = data;
