@@ -1,6 +1,6 @@
 {
     "name": "pintomind-player",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "description": "Player app for PinToMind",
     "main": "src/main/main.js",
     "scripts": {
@@ -11,7 +11,9 @@
         "ssh": "scripts/ssh",
         "scan": "scripts/scan_for_pi",
         "publish": "scripts/publish",
-        "build_and_publish": "npm run dist && npm run publish --"
+        "deploy_deb": "scripts/deploy_deb",
+        "build_and_publish": "npm run dist && npm run publish --",
+        "build_and_deploy_deb": "npm run dist && npm run deploy_deb --"
     },
     "repository": {
         "type": "git",
@@ -43,7 +45,8 @@
             "afterInstall": "debian/postinst",
             "depends": [
                 "pintomind-player-runtime",
-                "pintomind-ble-bridge"
+                "pintomind-ble-bridge",
+                "pintomind-player-controller"
             ]
         }
     },

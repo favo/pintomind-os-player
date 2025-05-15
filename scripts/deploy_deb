@@ -1,0 +1,43 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+PROJECT_DIR="$SCRIPT_DIR/.."
+
+STOP_COMMAND="systemctl --user stop pintomind-player"
+START_COMMAND="systemctl --user start pintomind-player"
+INSTALL_COMMAND="sudo dpkg -i /home/pi/pintomind-player.deb"
+
+for arg in "$@"; do
+  case "$arg" in
+    "--build") BUILD="1"; shift ;;
+  esac
+done
+
+if [ -n "$BUILD" ]; then
+  echo "🛠 Building .deb package..."
+  cd "$PROJECT_DIR" || exit 1
+  ./scripts/build.sh
+fi
+
+source "$SCRIPT_DIR/ip.sh"
+
+# Detect built .deb file
+DEB_FILE=$(ls "$PROJECT_DIR/dist"/pintomind-player_*_arm64.deb | sort | tail -n 1)
+if [ ! -f "$DEB_FILE" ]; then
+  echo "❌ No .deb file found in dist/"
+  exit 1
+fi
+
+echo "🛑 Stopping pintomind-player..."
+"$SCRIPT_DIR/ssh" "$STOP_COMMAND"
+
+echo "📦 Copying .deb package to Pi..."
+"$SCRIPT_DIR/scp" "$DEB_FILE" "$SERVER:/home/pi/pintomind-player.deb"
+
+echo "💾 Installing .deb on Pi..."
+"$SCRIPT_DIR/ssh" "$INSTALL_COMMAND"
+
+echo "✅ Starting pintomind-player..."
+"$SCRIPT_DIR/ssh" "$START_COMMAND"
+
+echo "🚀 Deployment complete!"
