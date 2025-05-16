@@ -1,6 +1,7 @@
 const quote = require("shell-quote/quote");
 
-const { executeCommand } = require("./utils.js");
+const { executeCommand } = require("./commandUtils");
+
 const { ipcMain } = require("electron");
 const { store } = require("./store");
 const { DbusMonitor, NM_STATE_CONNECTED_GLOBAL, NM_STATE_CONNECTING, NM_STATE_DISCONNECTED } = require('./dbusMonitor');

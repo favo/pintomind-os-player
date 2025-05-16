@@ -1,29 +1,42 @@
-const { executeCommand } = require("./utils.js");
+const { executeCommand } = require("./commandUtils");
+
 const fs = require("fs");
 
 class DisplayManager {
-
     async _executeCECCommand(command) {
         try {
             const result = await executeCommand(`echo "${command}" | cec-client -s -d 1`);
+    
+            if (!result || !result.stdout) {
+                console.warn(`[CEC Output Missing]: ${JSON.stringify(result)}`);
+                return null;
+            }
+    
             console.log(`[CEC Command Output]:\n${result.stdout}`);
             return result.stdout;
         } catch (error) {
             console.error(`Failed to execute CEC command "${command}":`, error);
-            throw error;
+            return null;
         }
     }
+    
 
     async getDisplayPowerStatus() {
         console.log("Checking display power status...");
         const result = await this._executeCECCommand("pow 0");
-
+    
+        if (!result) {
+            console.warn("CEC command returned null or undefined result.");
+            return "unknown";
+        }
+    
         const match = result.match(/power status: (.+)/i);
         const powerStatus = match ? match[1].toLowerCase().trim() : "unknown";
-
+    
         console.log(`Current display status: ${powerStatus}`);
         return powerStatus;
     }
+    
 
     async turnDisplayOnViaCEC() {
         console.log("Turning display ON via CEC...");
@@ -85,7 +98,7 @@ class DisplayManager {
      * @async
      * @returns {Promise<object>}
      */
-     async applyDisplayConfiguration() {
+    static async applyDisplayConfiguration() {
         const command = "/opt/pintomind/runtime/apply_display_config";
 
         return await executeCommand(command);
@@ -97,7 +110,7 @@ class DisplayManager {
      * @async
      * @returns {Promise<string>} A promise that resolves to the rotation value read from the file, or an empty string if an error occurs.
      */
-     async getScreenRotation() {
+    static async getScreenRotation() {
         try {
             return fs.readFileSync('./rotation', { encoding: 'utf8', flag: 'r' });
         } catch(error) {
@@ -132,7 +145,7 @@ class DisplayManager {
 
             fs.writeFileSync("./rotation", rotation);   
             
-            await this.applyDisplayConfiguration()
+            await DisplayManager.applyDisplayConfiguration()
         } catch(error) {
             logger.logError(error,  "setScreenRotation", "utils")
         }
@@ -157,7 +170,8 @@ class DisplayManager {
      static async setScreenResolution(resolution) {
         try {
             fs.writeFileSync("./resolution", resolution);
-            return await this.applyDisplayConfiguration()
+            return await 
+            DisplayManager.applyDisplayConfiguration()
         } catch(error) {
             logger.logError(error,  "setScreenResolution", "utils")
         }
@@ -181,7 +195,7 @@ class DisplayManager {
     static async getAllScreenResolution() {
         const command = "export DISPLAY=:0 | xrandr"
         const xrandrOutput = await executeCommand(command);
-        const rotation = await this.getScreenRotation()
+        const rotation = await DisplayManager.getScreenRotation()
 
         if (xrandrOutput.success) {
             const resolutionPattern = /\b\d{3,4}x\d{3,4}\b/g;

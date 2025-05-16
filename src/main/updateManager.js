@@ -1,5 +1,5 @@
 const { logger } = require("./appsignal");
-const { executeCommand } = require("./utils.js");
+const { executeCommand } = require("./commandUtils.js");
 
 class UpdateManager {
 
