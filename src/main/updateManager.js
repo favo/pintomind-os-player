@@ -1,5 +1,6 @@
 const { logger } = require("./appsignal");
-const { executeCommand } = require("./commandUtils.js");
+const { executeCommand, executeCommandStream } = require("./commandUtils.js");
+const { getWebContents } = require('./windowManager');
 
 class UpdateManager {
 
@@ -7,7 +8,7 @@ class UpdateManager {
         const command = "dpkg-query -W -f='${Package}: ${Version}\n' pintomind-ble-bridge pintomind-player pintomind-player-controller pintomind-player-runtime pintomind-plymouth-theme"
 
         const result = await executeCommand(command);
-
+            
         if (result.success) {
             return result.stdout
         }
@@ -21,54 +22,79 @@ class UpdateManager {
             case "app":
                 UpdateManager.runAppUpgrade()
                 break;
-            case "app":
+            case "controller":
                 UpdateManager.runPlayerControllerUpgrade()
                 break;
             default:
+                logger.logError("Invalid runUpgrade param:" + type,  "runUpgrade", "UpdateManager")
                 break;
         }
     }
 
-    /**
-     * Updates the device firmware by executing a system upgrade script.
-     * 
-     * Executes the firmware upgrade command located at `/opt/pintomind/runtime/system_upgrade`.
-     * If the command executes successfully, the device is rebooted to apply the updates.
-     *
-     * @async
-     * @returns {Promise<void>} Resolves when the firmware update process is complete.
-     */
     static async runSystemUpgrade() {
         const command = "/opt/pintomind/runtime/system_upgrade";
-
-        const result = await executeCommand(command);
-
-        if (result.success) {
+        const webContents = getWebContents();
+    
+        webContents.send("open_toaster", "Running system upgrade...");
+    
+        const result = await executeCommandStream(command, "system_upgrade", (output) => {
+            webContents.send("firmware_upgrade", output);
+        });
+    
+        if (!result.success) {
+            logger.logError(
+                "Failed to update firmware: " + result.stderr + result.stdout,
+                "runSystemUpgrade",
+                "UpdateManager"
+            );
+            webContents.send("open_toaster", "System upgrade failed.");
         } else {
-            // TODO: Sende postmessage til butler om feil
-            logger.logError("Failed to update firmware: " + result.stderr + result.stdout,  "runSystemUpgrade", "UpdateManager")
+            webContents.send("open_toaster", "System upgrade completed. Rebooting...");
         }
     }
+    
 
     static async runAppUpgrade() {
         const command = "/opt/pintomind/runtime/player_app_upgrade";
+        const webContents = getWebContents();
 
-        const result = await executeCommand(command);
+        webContents.send("open_toaster", "Running player app upgrade...");
 
-        if (result.success) {
+        const result = await executeCommandStream(command, "player_app_upgrade", (output) => {
+            webContents.send("firmware_upgrade", output);
+        });
+
+        if (!result.success) {
+            logger.logError(
+                "Failed to update app: " + result.stderr + result.stdout,
+                "runAppUpgrade",
+                "UpdateManager"
+            );
+            webContents.send("open_toaster", "Player app upgrade failed.");
         } else {
-            logger.logError("Failed to update app: " + result.stderr + result.stdout,  "runAppUpdate", "UpdateManager")
+            webContents.send("open_toaster", "Player app completed. Rebooting...");
         }
     }
 
     static async runPlayerControllerUpgrade() {
         const command = "/opt/pintomind/runtime/player_controller_upgrade";
+        const webContents = getWebContents();
 
-        const result = await executeCommand(command);
+        webContents.send("open_toaster", "Running player controller upgrade...");
 
-        if (result.success) {
+        const result = await executeCommandStream(command, "player_app_upgrade", (output) => {
+            webContents.send("firmware_upgrade", output);
+        });
+
+        if (!result.success) {
+            logger.logError(
+                "Failed to player controller: " + result.stderr + result.stdout,
+                "runPlayerControllerUpgrade",
+                "UpdateManager"
+            );
+            webContents.send("open_toaster", "Player controller upgrade failed.");
         } else {
-            logger.logError("Failed to update player controller: " + result.stderr + result.stdout,  "runPlayerControllerUpgrade", "UpdateManager")
+            webContents.send("open_toaster", "Player controller completed. Rebooting...");
         }
     }
 

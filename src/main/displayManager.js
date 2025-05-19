@@ -62,30 +62,32 @@ class DisplayManager {
 
     static async safeTurnOn() {
         console.log("Ensuring display is ON...");
+        const dm = new DisplayManager()
         
-        await this.turnDisplayOnViaScript();
+        await dm.turnDisplayOnViaScript();
         
-        const status = await this.getDisplayPowerStatus();
+        const status = await dm.getDisplayPowerStatus();
 
         if (status === "on") {
             console.log("Display is already ON. ✅");
         } else if (status === "standby") {
-            await this.turnDisplayOnViaCEC();
+            await dm.turnDisplayOnViaCEC();
         }
     }
 
     static async safeTurnOff() {
         console.log("Ensuring display is OFF...");
+        const dm = new DisplayManager()
 
-        const status = await this.getDisplayPowerStatus();
+        const status = await dm.getDisplayPowerStatus();
 
         if (status === "standby") {
             console.log("Display is already OFF (Standby). ✅");
         } else if (status === "on") {
-            await this.turnDisplayOffViaCEC();
+            await dm.turnDisplayOffViaCEC();
         }
 
-        await this.turnDisplayOffViaScript();
+        await dm.turnDisplayOffViaScript();
     }
 
 

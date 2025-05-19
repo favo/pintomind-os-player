@@ -31,7 +31,8 @@ contextBridge.exposeInMainWorld("api", {
             "connecting_result",
             "get_bluetooth_id",
             "wake",
-            "sleep"
+            "sleep",
+            "devMode"
         ];
         if (validChannels.includes(channel)) {
             ipcRenderer.send(channel, data);
@@ -51,7 +52,9 @@ contextBridge.exposeInMainWorld("api", {
             "dns_registerering",
             "get_screen_resolutions",
             "open_toaster",
-            "get_bluetooth_id"
+            "firmware_upgrade",
+            "get_bluetooth_id",
+            "devMode"
         ];
         if (validChannels.includes(channel)) {
             ipcRenderer.on(channel, (event, ...args) => func(...args));

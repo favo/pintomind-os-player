@@ -11,6 +11,8 @@ window.onload = function () {
 
     requestHost();
 
+
+
     /*
      *   LOAD STOP - Called when page is finished loading
      */
@@ -30,6 +32,11 @@ window.onload = function () {
 
         window.api.receive("open_toaster", (data) => {
             openToaster(data);
+        });
+
+        window.api.receive("firmware_upgrade", (data) => {
+            openToaster(data);
+            webview.contentWindow.postMessage({ action: "firmware_upgrade", data: data }, "*");
         });
     });
 
@@ -72,7 +79,8 @@ window.onload = function () {
                 sendMessageToMain("factory_reset");
                 break;
             case "upgrade_firmware":
-                sendMessageToMain("upgrade_firmware", "system");
+                const type = request.params.type || "system"
+                sendMessageToMain("upgrade_firmware", type);
                 break;
             case "current_physical_id":
                 myStorage = window.localStorage;

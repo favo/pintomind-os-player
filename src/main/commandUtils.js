@@ -1,4 +1,5 @@
 const nodeChildProcess = require("child_process");
+const { spawn } = require("child_process");
 const { promisify } = require("util");
 const execAsync = promisify(nodeChildProcess.exec);
 const { logger } = require("./appsignal");
@@ -45,4 +46,50 @@ async function executeCommand(command, type = null) {
     }
 }
 
-module.exports = { executeCommand };
+async function executeCommandStream(command, type = null, onData = null) {
+    return new Promise((resolve) => {
+        const child = spawn(command, [], { shell: true });
+
+        let stdout = '';
+        let stderr = '';
+
+        child.stdout.on('data', (data) => {
+            const text = data.toString();
+            stdout += text;
+            if (onData) onData(text.trim());
+        });
+
+        child.stderr.on('data', (data) => {
+            const text = data.toString();
+            stderr += text;
+            if (onData) onData(text.trim()); // Optional: include stderr messages
+        });
+
+        child.on('error', (error) => {
+            logger.logError(error, type || "executeCommand", "utils");
+            resolve({
+                type: type,
+                success: false,
+                stdout: null,
+                stderr: null,
+                error: error,
+            });
+        });
+
+        child.on('close', (code) => {
+            const success = code === 0;
+            resolve({
+                type: type,
+                success,
+                stdout: stdout.trim(),
+                stderr: stderr.trim(),
+            });
+        });
+    });
+}
+
+
+module.exports = { 
+    executeCommand,
+    executeCommandStream
+};

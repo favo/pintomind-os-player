@@ -7,18 +7,6 @@ STOP_COMMAND="systemctl --user stop pintomind-player"
 START_COMMAND="systemctl --user start pintomind-player"
 INSTALL_COMMAND="sudo dpkg -i /home/pi/pintomind-player.deb"
 
-for arg in "$@"; do
-  case "$arg" in
-    "--build") BUILD="1"; shift ;;
-  esac
-done
-
-if [ -n "$BUILD" ]; then
-  echo "🛠 Building .deb package..."
-  cd "$PROJECT_DIR" || exit 1
-  ./scripts/build.sh
-fi
-
 source "$SCRIPT_DIR/ip.sh"
 
 # Detect built .deb file
