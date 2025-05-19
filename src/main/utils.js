@@ -1,3 +1,4 @@
+const nodeChildProcess = require("child_process");
 const pjson = require("../../package.json");
 const si = require("systeminformation");
 const fs = require("fs");
@@ -12,7 +13,24 @@ const { executeCommand } = require("./commandUtils");
 const DisplayManager = require("./displayManager");
 const UpdateManager = require("./updateManager");
 
-const utils = (module.exports = {
+const utils = (module.exports = {/**
+    * Reboots the device using a system command.
+    * 
+    * Executes the `sudo reboot` command to restart the device. If an error occurs during
+    * the reboot process, the error is logged using AppSignal.
+    *
+    * @returns {void}
+    * @throws {Error} Errors during the reboot command execution are logged but not rethrown.
+    */
+    rebootDevice() {
+        try {
+            nodeChildProcess.execSync("sudo reboot");
+        } catch (error) {
+            logger.logError(error,  "rebootDevice", "utils")
+        }
+    },
+
+
     /**
      * Sends device information to the main window.
      * 
@@ -106,6 +124,50 @@ const utils = (module.exports = {
 
         if (config["appsignal-key"]) {
             logger.setAppsignalKey(config["appsignal-key"]);
+        }
+    },
+
+    /**
+     * Retrieves system statistics including CPU load, memory usage, CPU temperature, CPU speed, and system uptime.
+     * 
+     * Uses the `systeminformation` library to gather real-time system metrics. If an error occurs during data retrieval,
+     * the error is logged using AppSignal, and an empty object is returned.
+     *
+     * @async
+     * @returns {Promise<object>} A promise that resolves to an object containing the following keys:
+     *   - `cpu_load` {number}: The current CPU load percentage.
+     *   - `total_memory` {number}: The total memory available on the system (in bytes).
+     *   - `active_memory` {number}: The currently active memory in use (in bytes).
+     *   - `cpu_temp` {number|null}: The current CPU temperature (in Celsius), or `null` if unavailable.
+     *   - `cpu_speed` {number}: The average CPU clock speed (in GHz).
+     *   - `uptime` {number}: The system uptime (in seconds).
+     * 
+     * @throws {Error} Errors during system information retrieval are logged using AppSignal but not rethrown.
+     */
+    async getSystemStats() {
+        try {
+            const stats = {};
+
+            const cpuLoad = await si.currentLoad();
+            stats["cpu_load"] = cpuLoad.currentLoad;
+
+            const memory = await si.mem();
+            stats["total_memory"] = memory.total;
+            stats["active_memory"] = memory.active;
+
+            const cpuTemp = await si.cpuTemperature();
+            stats["cpu_temp"] = cpuTemp.main;
+
+            const cpuSpeed = await si.cpuCurrentSpeed();
+            stats["cpu_speed"] = cpuSpeed.avg;
+
+            const time = await si.time();
+            stats["uptime"] = time.uptime;
+
+            return stats;
+        } catch (error) {
+            logger.logError(error,  "getSystemStats", "utils")
+            return {}
         }
     },
 

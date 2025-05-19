@@ -13,6 +13,22 @@ class UpdateManager {
         }
     }
 
+    static runUpgrade(type) {
+        switch (type) {
+            case "system":
+                UpdateManager.runSystemUpgrade()
+                break;
+            case "app":
+                UpdateManager.runAppUpgrade()
+                break;
+            case "app":
+                UpdateManager.runPlayerControllerUpgrade()
+                break;
+            default:
+                break;
+        }
+    }
+
     /**
      * Updates the device firmware by executing a system upgrade script.
      * 

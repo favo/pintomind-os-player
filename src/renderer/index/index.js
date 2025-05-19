@@ -72,7 +72,7 @@ window.onload = function () {
                 sendMessageToMain("factory_reset");
                 break;
             case "upgrade_firmware":
-                sendMessageToMain("upgrade_firmware");
+                sendMessageToMain("upgrade_firmware", "system");
                 break;
             case "current_physical_id":
                 myStorage = window.localStorage;

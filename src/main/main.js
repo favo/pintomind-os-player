@@ -1,4 +1,4 @@
-const { rebootDevice, getSystemStats,readBluetoothID, setSettingsFromPlayerConfig,
+const { rebootDevice, getSystemStats, readBluetoothID, setSettingsFromPlayerConfig,
     parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID } = require("./utils");
 
 const NetworkManager = require("./networkManager");
@@ -115,7 +115,7 @@ app.whenReady().then(() => {
 
     /* Update app */
     globalShortcut.register("CommandOrControl+U", () => {
-        console.log("Checking and Updating App..");
+        UpdateManager.runAppUpgrade()
     });
     
     /* Opens settings page */
@@ -135,12 +135,10 @@ app.whenReady().then(() => {
     });
 
     globalShortcut.register("CommandOrControl+F", () => {
-        const dm = new DisplayManager()
-        dm.safeTurnOn()
+        DisplayManager.safeTurnOn()
     });
     globalShortcut.register("CommandOrControl+V", () => {
-        const dm = new DisplayManager()
-        dm.safeTurnOff()
+        DisplayManager.safeTurnOff()
     });
 
     /* Toggle devMode */
@@ -171,12 +169,8 @@ ipcMain.on("request_device_info", async (event, arg) => {
     sendDeviceInfoToMainWindow()
 });
 
-ipcMain.on("upgrade_firmware", async (event, arg) => {
-    UpdateManager.runSystemUpgrade();
-});
-
-ipcMain.on("update_app", (event, arg) => {
-    UpdateManager.runAppUpgrade()
+ipcMain.on("upgrade_firmware", async (event, type) => {
+    UpdateManager.runUpgrade(type);
 });
 
 ipcMain.on("pincode", (event, pincode) => {

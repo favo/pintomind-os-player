@@ -60,7 +60,7 @@ class DisplayManager {
         return await executeCommand(command);
     }
 
-    async safeTurnOn() {
+    static async safeTurnOn() {
         console.log("Ensuring display is ON...");
         
         await this.turnDisplayOnViaScript();
@@ -74,7 +74,7 @@ class DisplayManager {
         }
     }
 
-    async safeTurnOff() {
+    static async safeTurnOff() {
         console.log("Ensuring display is OFF...");
 
         const status = await this.getDisplayPowerStatus();
