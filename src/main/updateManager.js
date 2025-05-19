@@ -38,7 +38,7 @@ class UpdateManager {
         webContents.send("open_toaster", "Running system upgrade...");
     
         const result = await executeCommandStream(command, "system_upgrade", (output) => {
-            webContents.send("firmware_upgrade", output);
+            webContents.send("firmware_upgrade", {status: "inprogress", output: output});
         });
     
         if (!result.success) {
@@ -47,12 +47,13 @@ class UpdateManager {
                 "runSystemUpgrade",
                 "UpdateManager"
             );
+            webContents.send("firmware_upgrade", {status: "failed", output: result.stderr + result.stdout});
             webContents.send("open_toaster", "System upgrade failed.");
         } else {
+            webContents.send("firmware_upgrade", {status: "finished"});
             webContents.send("open_toaster", "System upgrade completed. Rebooting...");
         }
     }
-    
 
     static async runAppUpgrade() {
         const command = "/opt/pintomind/runtime/player_app_upgrade";
@@ -61,7 +62,7 @@ class UpdateManager {
         webContents.send("open_toaster", "Running player app upgrade...");
 
         const result = await executeCommandStream(command, "player_app_upgrade", (output) => {
-            webContents.send("firmware_upgrade", output);
+            webContents.send("firmware_upgrade", {status: "inprogress", output: output});
         });
 
         if (!result.success) {
@@ -70,8 +71,10 @@ class UpdateManager {
                 "runAppUpgrade",
                 "UpdateManager"
             );
+            webContents.send("firmware_upgrade", {status: "failed", output: result.stderr + result.stdout});
             webContents.send("open_toaster", "Player app upgrade failed.");
         } else {
+            webContents.send("firmware_upgrade", {status: "finished"});
             webContents.send("open_toaster", "Player app completed. Rebooting...");
         }
     }
@@ -83,7 +86,7 @@ class UpdateManager {
         webContents.send("open_toaster", "Running player controller upgrade...");
 
         const result = await executeCommandStream(command, "player_app_upgrade", (output) => {
-            webContents.send("firmware_upgrade", output);
+            webContents.send("firmware_upgrade", {status: "inprogress", output: output});
         });
 
         if (!result.success) {
@@ -92,8 +95,10 @@ class UpdateManager {
                 "runPlayerControllerUpgrade",
                 "UpdateManager"
             );
+            webContents.send("firmware_upgrade", {status: "failed", output: result.stderr + result.stdout});
             webContents.send("open_toaster", "Player controller upgrade failed.");
         } else {
+            webContents.send("firmware_upgrade", {status: "finished"});
             webContents.send("open_toaster", "Player controller completed. Rebooting...");
         }
     }

@@ -35,7 +35,7 @@ window.onload = function () {
         });
 
         window.api.receive("firmware_upgrade", (data) => {
-            openToaster(data);
+            openToaster(data.output);
             webview.contentWindow.postMessage({ action: "firmware_upgrade", data: data }, "*");
         });
     });
