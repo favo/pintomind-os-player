@@ -23,13 +23,16 @@ const fs = require("fs");
 //app.commandLine.appendSwitch("disable-gpu-driver-workarounds");
 //app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
-app.commandLine.appendSwitch('gl', 'egl')
-app.commandLine.appendSwitch('enable-gpu-rasterization');  // GPU for video rendering
-app.commandLine.appendSwitch('ignore-gpu-blocklist');  // Enable all GPU features
-app.commandLine.appendSwitch('enable-zero-copy');  // Efficient video frame handling
-app.commandLine.appendSwitch('disable-software-video-decoder');  // Force hardware decoding
+app.commandLine.appendSwitch('use-gl', 'egl');
+app.commandLine.appendSwitch('enable-gpu-rasterization');
+app.commandLine.appendSwitch('enable-zero-copy');
+app.commandLine.appendSwitch('disable-smooth-scrolling');
+app.commandLine.appendSwitch('disable-software-video-decoder');
 app.commandLine.appendSwitch('enable-native-gpu-memory-buffers');
 app.commandLine.appendSwitch('disable-gpu-driver-bug-workarounds');
+app.commandLine.appendSwitch('ignore-gpu-blocklist');
+app.commandLine.appendSwitch('enable-features', 'VaapiVideoDecoder,CanvasOopRasterization');
+app.commandLine.appendSwitch('disable-features', 'UseChromeOSDirectVideoDecoder');
 
 let systemStatsStream;
 
