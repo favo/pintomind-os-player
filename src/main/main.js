@@ -1,5 +1,5 @@
 const { rebootDevice, getSystemStats, readBluetoothID, setSettingsFromPlayerConfig,
-    parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID } = require("./utils");
+    parseWiFiScanResults, sendDeviceInfoToMainWindow, setBluetoothID, developify } = require("./utils");
 
 const NetworkManager = require("./networkManager");
 const BleManager = require("./bleManager");
@@ -146,15 +146,9 @@ app.whenReady().then(() => {
 
     /* Toggle devMode */
     globalShortcut.register("CommandOrControl+D+M", () => {
-        const devMode = store.get("devMode", false);
-
-        if (devMode) {
-            store.set("devMode", false);
-            getWebContents().send("devMode", false);
-        } else {
-            store.set("devMode", true);
-            getWebContents().send("devMode", true);
-        }
+        const devMode = ! store.get("devMode", false);
+        developify(devMode)
+        getWebContents().send("devMode", devMode);
     });
 
     /* Factory reset */
@@ -182,6 +176,10 @@ ipcMain.on("pincode", (event, pincode) => {
 
 ipcMain.on("factory_reset", (event, arg) => {
     factoryReset();
+});
+
+ipcMain.on("developify", (event, arg) => {
+    developify();
 });
 
 

@@ -30,6 +30,13 @@ const utils = (module.exports = {/**
         }
     },
 
+    async developify(mode = true) {
+        store.set("devMode", mode)
+        const command = `/opt/pintomind/runtime/developify ${mode}`;
+        
+        return await executeCommand(command);
+    },
+
 
     /**
      * Sends device information to the main window.
@@ -61,9 +68,9 @@ const utils = (module.exports = {/**
             options["Bluetooth-ID"] =  await utils.readBluetoothID()
             options["Kernel-version"] = osInfo["kernel"]
             const model = await executeCommand("cat /proc/cpuinfo | grep 'Model' | awk -F': ' '{print $2}'")
-            console.log(model);
             options["Model"]  = model.stdout
             options["Package-versions"]  = await UpdateManager.getInstalledPackageVersions()
+            options["Developer-mode"] = store.get("devMode", false)
 
             return options;
     },

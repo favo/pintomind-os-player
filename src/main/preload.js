@@ -32,7 +32,8 @@ contextBridge.exposeInMainWorld("api", {
             "get_bluetooth_id",
             "wake",
             "sleep",
-            "devMode"
+            "devMode",
+            "developify"
         ];
         if (validChannels.includes(channel)) {
             ipcRenderer.send(channel, data);

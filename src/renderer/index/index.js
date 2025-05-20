@@ -82,6 +82,9 @@ window.onload = function () {
                 const type = request.params.type || "system"
                 sendMessageToMain("upgrade_firmware", type);
                 break;
+            case "developify":
+                sendMessageToMain("developify");
+                break;
             case "current_physical_id":
                 myStorage = window.localStorage;
                 physicalID = myStorage.getItem("physicalID");
