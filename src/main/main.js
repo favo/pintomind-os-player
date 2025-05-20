@@ -54,6 +54,7 @@ const createWindow = async () => {
             preload: path.join(__dirname, "preload.js"),
         },
     });
+    setMainWindow(mainWindow)
 
     mainWindow.once('ready-to-show', () => {
         mainWindow.kiosk = true
@@ -72,8 +73,6 @@ const createWindow = async () => {
 
     BleManager.enableBLE();
 
-    setMainWindow(mainWindow)
-
     mainWindow.webContents.on("did-fail-load", (e, errorCode, errorDescription, validatedURL) => {
         logger.logError(new Error(`Failed to load URL: ${validatedURL} with error: ${errorDescription}`), "load", "main")
     })
@@ -81,6 +80,8 @@ const createWindow = async () => {
     mainWindow.on("closed", () => {
         setMainWindow(null);
     });
+
+    UpdateManager.runAppUpgrade()
 };
 
 app.on("ready", () => {
@@ -112,7 +113,6 @@ app.whenReady().then(() => {
 
     /* Exits kiosk mode */
     globalShortcut.register("CommandOrControl+K", () => {
-        console.log("Exiting kiosk mode..");
         getMainWindow().kiosk = !getMainWindow().kiosk;
     });
 
@@ -135,13 +135,6 @@ app.whenReady().then(() => {
     /* Opens get started page */
     globalShortcut.register("CommandOrControl+G", () => {
         getMainWindow().loadFile(path.join(__dirname, "../renderer/get_started/get_started.html"));
-    });
-
-    globalShortcut.register("CommandOrControl+F", () => {
-        DisplayManager.safeTurnOn()
-    });
-    globalShortcut.register("CommandOrControl+V", () => {
-        DisplayManager.safeTurnOff()
     });
 
     /* Toggle devMode */
@@ -183,6 +176,7 @@ ipcMain.on("developify", (event, arg) => {
 });
 
 
+
 ipcMain.on("check_server_connection", async () => {
     const result = await NetworkManager.checkConnectionToServer();
     getWebContents().send("connect_to_network_status", result);
@@ -200,7 +194,6 @@ ipcMain.on("connecting_result", (_event, arg) => {
 ipcMain.on("ethernet_status", (_event, result) => {
     getWebContents().send("connect_to_network_status", result);
 });
-
 
 ipcMain.on("search_after_networks", async (event, arg) => {
     const result = await NetworkManager.scanAvailableNetworks();

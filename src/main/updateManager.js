@@ -75,7 +75,7 @@ class UpdateManager {
             webContents.send("open_toaster", "Player app upgrade failed.");
         } else {
             webContents.send("firmware_upgrade", {status: "finished"});
-            webContents.send("open_toaster", "Player app completed. Rebooting...");
+            webContents.send("open_toaster", "Player app completed...");
         }
     }
 
@@ -99,7 +99,7 @@ class UpdateManager {
             webContents.send("open_toaster", "Player controller upgrade failed.");
         } else {
             webContents.send("firmware_upgrade", {status: "finished"});
-            webContents.send("open_toaster", "Player controller completed. Rebooting...");
+            webContents.send("open_toaster", "Player controller completed...");
         }
     }
 

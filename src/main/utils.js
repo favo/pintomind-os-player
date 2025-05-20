@@ -59,6 +59,8 @@ const utils = (module.exports = {/**
     async sendDeviceInfo() {
             const options = {};
             const osInfo = await si.osInfo();
+            const model = await executeCommand("cat /proc/cpuinfo | grep 'Model' | awk -F': ' '{print $2}'")
+
             options["Host"] = store.get("host");
             options["App-version"] = pjson.version;
             options["Platform"] = "PinToMind OS";
@@ -67,7 +69,6 @@ const utils = (module.exports = {/**
             options["Screen-resolutions"] =  await DisplayManager.getAllScreenResolution()
             options["Bluetooth-ID"] =  await utils.readBluetoothID()
             options["Kernel-version"] = osInfo["kernel"]
-            const model = await executeCommand("cat /proc/cpuinfo | grep 'Model' | awk -F': ' '{print $2}'")
             options["Model"]  = model.stdout
             options["Package-versions"]  = await UpdateManager.getInstalledPackageVersions()
             options["Developer-mode"] = store.get("devMode", false)
@@ -125,7 +126,7 @@ const utils = (module.exports = {/**
             store.set("lang", config["language"]);
         }
 
-        if (! store.has("lang") && config["devMode"]) {
+        if (! store.has("devMode") && config["devMode"]) {
             store.set("devMode", config["devMode"]);
         }
 
