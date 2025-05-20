@@ -33,7 +33,8 @@ contextBridge.exposeInMainWorld("api", {
             "wake",
             "sleep",
             "devMode",
-            "developify"
+            "developify",
+            "player_ready_received"
         ];
         if (validChannels.includes(channel)) {
             ipcRenderer.send(channel, data);

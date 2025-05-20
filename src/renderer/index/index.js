@@ -55,6 +55,7 @@ window.onload = function () {
                     clearInterval(playerReadyInterval);
                     playerReadyInterval = null;
                 }
+                sendMessageToMain("player_ready_received");
                 break;
             case "reboot":
                 sendMessageToMain("reboot_device");

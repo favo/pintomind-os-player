@@ -80,8 +80,6 @@ const createWindow = async () => {
     mainWindow.on("closed", () => {
         setMainWindow(null);
     });
-
-    UpdateManager.runAppUpgrade()
 };
 
 app.on("ready", () => {
@@ -157,6 +155,10 @@ ipcMain.on("reboot_device", (event, arg) => {
 
 ipcMain.on("request_device_info", async (event, arg) => {
     sendDeviceInfoToMainWindow()
+});
+
+ipcMain.on("player_ready_received", async (_event, _arg) => {
+    UpdateManager.runAppUpgrade()
 });
 
 ipcMain.on("upgrade_firmware", async (event, type) => {
