@@ -75,7 +75,7 @@ class UpdateManager {
             webContents.send("open_toaster", "Player app upgrade failed.");
         } else {
             webContents.send("firmware_upgrade", {status: "finished"});
-            webContents.send("open_toaster", "Player app completed...");
+            webContents.send("open_toaster", "Player app upgrade completed...");
         }
     }
 
